@@ -15,6 +15,7 @@ supabase
 # LangChain and LLM
 langchain
 langchain-openai
+langchain-community
 openai
 
 # Data processing

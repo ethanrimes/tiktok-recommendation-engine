@@ -10,6 +10,7 @@ class AffinityScorer:
         tag_mappings: List[Dict[str, Any]],
         user_data: Dict[str, Any],
         posts: List[Dict[str, Any]],
+        reposts: List[Dict[str, Any]],  # ADDED: reposts parameter
         liked_posts: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """
@@ -19,6 +20,7 @@ class AffinityScorer:
             tag_mappings: Initial tag mappings from LLM
             user_data: User profile data
             posts: User's posted videos
+            reposts: User's reposted videos  # ADDED
             liked_posts: Videos liked by user
             
         Returns:
@@ -32,7 +34,7 @@ class AffinityScorer:
             
             # Adjust based on engagement patterns
             engagement_boost = self._calculate_engagement_boost(
-                tag, posts, liked_posts
+                tag, posts, reposts, liked_posts  # FIXED: Added reposts
             )
             
             # Adjust based on user influence
@@ -55,36 +57,51 @@ class AffinityScorer:
         self,
         tag: str,
         posts: List[Dict[str, Any]],
+        reposts: List[Dict[str, Any]],  # Parameter already correct
         liked_posts: List[Dict[str, Any]]
     ) -> float:
         """Calculate engagement-based boost for a tag."""
         boost = 0.0
-        
-        # Check how many posts/likes relate to this tag
         tag_lower = tag.lower()
-        relevant_posts = 0
-        total_engagement = 0
         
-        for post in posts:
-            desc_lower = post.get('description', '').lower()
-            hashtags_lower = [h.lower() for h in post.get('hashtags', [])]
-            
-            if tag_lower in desc_lower or tag_lower in hashtags_lower:
-                relevant_posts += 1
-                stats = post.get('stats', {})
-                total_engagement += (
-                    stats.get('likes', 0) +
-                    stats.get('comments', 0) * 2 +  # Comments weighted higher
-                    stats.get('shares', 0) * 3  # Shares weighted highest
-                )
+        # Analyze posts
+        post_relevance = self._analyze_content_relevance(posts, tag_lower, weight=1.0)
         
-        if relevant_posts > 0:
-            avg_engagement = total_engagement / relevant_posts
-            # Normalize to 0-0.2 boost range
-            boost = min(0.2, avg_engagement / 100000)
+        # Analyze reposts (weighted slightly lower than original posts)
+        repost_relevance = self._analyze_content_relevance(reposts, tag_lower, weight=0.8)
+        
+        # Analyze liked posts (weighted lower)
+        liked_relevance = self._analyze_content_relevance(liked_posts, tag_lower, weight=0.6)
+        
+        # Combine scores
+        total_relevance = post_relevance + repost_relevance + liked_relevance
+        
+        # Normalize to 0-0.2 boost range
+        boost = min(0.2, total_relevance / 100)
         
         return boost
     
+    def _analyze_content_relevance(self, content: List[Dict[str, Any]], tag: str, weight: float) -> float:
+        """Analyze how relevant content is to a tag."""
+        if not content:
+            return 0.0
+        
+        relevance_score = 0.0
+        for item in content:
+            desc_lower = item.get('description', '').lower()
+            hashtags_lower = [h.lower() for h in item.get('hashtags', [])]
+            
+            if tag in desc_lower or tag in hashtags_lower:
+                stats = item.get('stats', {})
+                engagement = (
+                    stats.get('likes', 0) +
+                    stats.get('comments', 0) * 2 +
+                    stats.get('shares', 0) * 3
+                )
+                relevance_score += engagement * weight
+        
+        return relevance_score
+
     def _calculate_influence_factor(self, user_data: Dict[str, Any]) -> float:
         """Calculate user influence factor."""
         followers = user_data.get('follower_count', 0)

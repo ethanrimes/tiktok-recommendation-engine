@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     enable_cache: bool = True
     
     # Taxonomy Generation Settings
-    num_categories: int = 20
+    num_categories: int = 100
     min_category_confidence: float = 0.7
     
     # User Profiling Settings
@@ -63,8 +63,8 @@ class Settings(BaseSettings):
     relevance_weight: float = 0.4
     
     # Model Settings
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
-    llm_model: str = "gpt-3.5-turbo"
+    embedding_model: str = "text-embedding-3-large"
+    llm_model: str = "gpt-4.1"
     llm_temperature: float = 0.7
     
     # Logging

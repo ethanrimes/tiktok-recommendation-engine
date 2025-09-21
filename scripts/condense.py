@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-# scripts/condense_codebase.py
+# scripts/condense.py
 """
 Usage:
     # Entire codebase
-    python scripts/condense_codebase.py
+    python scripts/condense.py
     
     # Specific directories/files
-    python scripts/condense_codebase.py agents/ core/ main.py
+    python scripts/condense.py agents/ core/ main.py
     
     # Only agent code
-    python scripts/condense_codebase.py agents/
+    python scripts/condense.py agents/
     
     # Exclude large files
-    python scripts/condense_codebase.py --max-size 100
+    python scripts/condense.py --max-size 100
     
     # Include .env for debugging
-    python scripts/condense_codebase.py --include-env
+    python scripts/condense.py --include-env
 """
 
 import os

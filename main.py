@@ -63,6 +63,11 @@ def profile(username, taxonomy, output):
         categories=categories
     )
     
+    # Check if profile generation failed
+    if not user_profile or 'tags' not in user_profile:
+        console.print(f"[red]Failed to generate profile for @{username}[/red]")
+        return
+    
     if output:
         save_json(user_profile, Path(output))
     

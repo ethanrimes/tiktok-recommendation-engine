@@ -2,7 +2,7 @@
 
 from typing import List, Dict, Any
 
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
@@ -49,44 +49,34 @@ class TagMapper:
         self,
         user_data: Dict[str, Any],
         posts: List[Dict[str, Any]],
+        reposts: List[Dict[str, Any]],  # NEW parameter
         liked_posts: List[Dict[str, Any]],
         categories: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """
-        Map user to category tags.
-        
-        Args:
-            user_data: User profile data
-            posts: User's posted videos
-            liked_posts: Videos liked by user
-            categories: Available categories
-            
-        Returns:
-            List of tag mappings with affinity scores
-        """
+        """Map user to category tags with enhanced data."""
         try:
-            # Prepare posted content summary
-            posted_content = self._summarize_posts(posts[:10])  # Use top 10 posts
-            
-            # Prepare liked content summary
-            liked_content = self._summarize_posts(liked_posts[:10])  # Use top 10 liked
-            
-            # Prepare categories summary
+            posted_content = self._summarize_posts(posts[:10])
+            reposted_content = self._summarize_posts(reposts[:10])  # NEW
+            liked_content = self._summarize_posts(liked_posts[:10])
             categories_text = self._summarize_categories(categories)
             
-            # Format prompt
+            # Include region context in prompt
+            region_context = f"User is from {user_data.get('region', 'Unknown')} region, speaks {user_data.get('language', 'Unknown')}"
+            
             formatted_prompt = self.prompt.format(
                 username=user_data.get('username', ''),
                 bio=user_data.get('bio', 'No bio'),
                 follower_count=user_data.get('follower_count', 0),
                 following_count=user_data.get('following_count', 0),
                 posted_content=posted_content,
+                reposted_content=reposted_content,  # NEW
                 liked_content=liked_content,
-                categories=categories_text
+                categories=categories_text,
+                region_context=region_context  # NEW
             )
             
             # Generate response
-            response = self.llm.predict(formatted_prompt)
+            response = self.llm.invoke(formatted_prompt).content
             
             # Parse response
             result = self.parser.parse(response)

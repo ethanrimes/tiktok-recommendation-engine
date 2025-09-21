@@ -105,6 +105,54 @@ class APIExtractor:
         
         return parsed_videos
     
+    def extract_user_data(self, username: str) -> Optional[Dict[str, Any]]:
+        """Extract comprehensive user profile data."""
+        # Try to get detailed info with region first
+        user_info = self.api_client.get_user_info_with_region(username)
+        
+        if not user_info:
+            # Fallback to basic info
+            user_info = self.api_client.get_user_info(username)
+        
+        if not user_info:
+            return None
+        
+        user = user_info.get("user", {})
+        stats = user_info.get("stats", {})
+        stats_v2 = user_info.get("statsV2", {})
+        
+        return {
+            'username': username,
+            'user_id': user.get("id"),
+            'sec_uid': user.get("secUid"),
+            'nickname': user.get("nickname"),
+            'bio': user.get("signature", ""),
+            'verified': user.get("verified", False),
+            'avatar': user.get("avatarLarger"),
+            'follower_count': int(stats_v2.get("followerCount", stats.get("followerCount", 0))),
+            'following_count': int(stats_v2.get("followingCount", stats.get("followingCount", 0))),
+            'heart_count': int(stats_v2.get("heartCount", stats.get("heartCount", 0))),
+            'video_count': int(stats_v2.get("videoCount", stats.get("videoCount", 0))),
+            'region': user.get("region", "Unknown"),
+            'language': user.get("language", "en"),
+            'is_organization': user.get("isOrganization", 0) == 1,
+            'category': user.get("commerceUserInfo", {}).get("category", None),
+            'bio_link': user.get("bioLink", {}).get("link", None)
+        }
+
+    def extract_user_reposts(self, sec_uid: str, count: int = 30) -> List[Dict[str, Any]]:
+        """Extract user's reposted videos."""
+        reposts = self.api_client.get_user_reposts(sec_uid, count)
+        
+        parsed_reposts = []
+        for repost in reposts:
+            parsed = self._parse_post(repost)
+            if parsed:
+                parsed['is_repost'] = True
+                parsed_reposts.append(parsed)
+        
+        return parsed_reposts
+    
     def _parse_post(self, post_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Parse raw post data.

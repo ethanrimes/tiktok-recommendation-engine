@@ -11,6 +11,9 @@ User Profile:
 User's Posted Content (most recent):
 {posted_content}
 
+User's Reposted Content (most recent):
+{reposted_content}
+
 User's Liked Content (most recent):
 {liked_content}
 

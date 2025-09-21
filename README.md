@@ -56,13 +56,13 @@ python scripts/init_db.py
 
 ```bash
 # Generate taxonomy from text files
-python main.py taxonomy --input data/input/tiktok_text.txt --output data/output/taxonomy.json
+python main.py taxonomy --input data/input/trending_hashtags.txt --output data/output/taxonomy.json -n 100
 
 # Profile a user
-python main.py profile --username taylorswift --output data/output/user_profile.json
+python main.py profile --username taylorswift --output data/output/taylorswift_profile.json --taxonomy data/output/taxonomy.json
 
 # Get recommendations for a user
-python main.py recommend --username taylorswift --count 20
+python main.py recommend --username taylorswift --count 5
 
 # Run full pipeline
 python main.py pipeline --username taylorswift --taxonomy data/output/taxonomy.json

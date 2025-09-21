@@ -2,7 +2,7 @@
 
 from typing import List, Dict, Any
 
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
@@ -64,7 +64,7 @@ class QueryGenerator:
             )
             
             # Generate response
-            response = self.llm.predict(formatted_prompt)
+            response = self.llm.invoke(formatted_prompt).content
             
             # Parse response
             result = self.parser.parse(response)

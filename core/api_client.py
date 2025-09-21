@@ -99,7 +99,7 @@ class TikTokAPIClient:
                 {
                     "secUid": sec_uid,
                     "count": min(30, count - len(posts)),
-                    "cursor": cursor
+                    "cursor": str(cursor)  # Convert to string
                 }
             )
             
@@ -117,10 +117,15 @@ class TikTokAPIClient:
             if not data.get("hasMore"):
                 break
             
-            cursor = data.get("cursor", cursor + len(item_list))
+            # Fix: Handle cursor properly
+            new_cursor = data.get("cursor")
+            if new_cursor:
+                cursor = new_cursor  # Use the cursor from response
+            else:
+                cursor = int(cursor) + len(item_list)  # Fallback increment
         
         return posts[:count]
-    
+
     def get_user_liked_posts(self, sec_uid: str, count: int = 30, cursor: int = 0) -> List[Dict[str, Any]]:
         """Get videos liked by user."""
         liked = []
@@ -130,26 +135,50 @@ class TikTokAPIClient:
                 "user/liked-posts",
                 {
                     "secUid": sec_uid,
-                    "count": min(30, count - len(liked)),
-                    "cursor": cursor
+                    "count": str(min(30, count - len(liked))),  # Ensure string
+                    "cursor": str(cursor)  # Ensure string
                 }
             )
             
             if response.status_code != 200 or not response.data:
                 break
             
-            data = response.data.get("data", {})
-            item_list = data.get("itemList", [])
+            # Handle different response structures
+            if isinstance(response.data, dict):
+                # Check if data is nested or at top level
+                if "data" in response.data:
+                    data = response.data.get("data", {})
+                    item_list = data.get("itemList", [])
+                elif "itemList" in response.data:
+                    # Direct itemList at top level
+                    item_list = response.data.get("itemList", [])
+                    data = response.data
+                else:
+                    # No recognizable structure
+                    print(f"Unexpected response structure: {list(response.data.keys())[:5]}")
+                    break
+            else:
+                print(f"Unexpected response type: {type(response.data)}")
+                break
             
             if not item_list:
+                # Could be private or no liked videos
+                print(f"No liked videos found for user (may be private)")
                 break
             
             liked.extend(item_list)
             
-            if not data.get("hasMore"):
+            # Check for more data
+            has_more = data.get("hasMore", False) or data.get("has_more", False)
+            if not has_more:
                 break
             
-            cursor = data.get("cursor", cursor + len(item_list))
+            # Update cursor
+            new_cursor = data.get("cursor", data.get("nextCursor"))
+            if new_cursor:
+                cursor = str(new_cursor)
+            else:
+                cursor = str(int(cursor) + len(item_list))
         
         return liked[:count]
     
@@ -229,3 +258,117 @@ class TikTokAPIClient:
         """Extract hashtags from text."""
         import re
         return re.findall(r'#(\w+)', text)
+
+    def get_user_info_with_region(self, username: str) -> Optional[Dict[str, Any]]:
+        """Get detailed user info including region."""
+        response = self._make_request(
+            "user/info-with-region",
+            {"uniqueId": username}
+        )
+        
+        if response.status_code == 200 and response.data:
+            return response.data.get("userInfo", {})
+        return None
+
+    def get_user_posts(self, sec_uid: str, count: int = 30, cursor: int = 0) -> List[Dict[str, Any]]:
+        """Get user's posted videos - FIXED for correct schema."""
+        posts = []
+        
+        while len(posts) < count:
+            response = self._make_request(
+                "user/posts",
+                {
+                    "secUid": sec_uid,
+                    "count": str(min(35, count - len(posts))),
+                    "cursor": str(cursor)
+                }
+            )
+            
+            if response.status_code != 200 or not response.data:
+                break
+            
+            # Handle the schema: data is nested under 'data' key
+            data = response.data.get("data", response.data)
+            item_list = data.get("itemList", [])
+            
+            if not item_list:
+                break
+            
+            posts.extend(item_list)
+            
+            if not data.get("hasMore", False):
+                break
+            
+            cursor = data.get("cursor", str(int(cursor) + len(item_list)))
+        
+        return posts[:count]
+
+    def get_user_reposts(self, sec_uid: str, count: int = 30, cursor: int = 0) -> List[Dict[str, Any]]:
+        """Get videos reposted by user."""
+        reposts = []
+        
+        while len(reposts) < count:
+            response = self._make_request(
+                "user/repost",
+                {
+                    "secUid": sec_uid,
+                    "count": str(min(30, count - len(reposts))),
+                    "cursor": str(cursor)
+                }
+            )
+            
+            if response.status_code != 200 or not response.data:
+                break
+            
+            # Top-level structure based on schema
+            item_list = response.data.get("itemList", [])
+            
+            if not item_list:
+                break
+            
+            reposts.extend(item_list)
+            
+            if not response.data.get("hasMore", False):
+                break
+            
+            cursor = response.data.get("cursor", str(int(cursor) + len(item_list)))
+        
+        return reposts[:count]
+
+    def get_user_liked_posts(self, sec_uid: str, count: int = 30, cursor: int = 0) -> List[Dict[str, Any]]:
+        """Get videos liked by user - FIXED."""
+        liked = []
+        
+        while len(liked) < count:
+            response = self._make_request(
+                "user/liked-posts",
+                {
+                    "secUid": sec_uid,
+                    "count": str(min(30, count - len(liked))),
+                    "cursor": str(cursor)
+                }
+            )
+            
+            if response.status_code != 200 or not response.data:
+                break
+            
+            # Check both possible structures
+            if "data" in response.data:
+                data = response.data["data"]
+            else:
+                data = response.data
+            
+            item_list = data.get("itemList", [])
+            
+            if not item_list:
+                # This could mean private likes or no liked videos
+                break
+            
+            liked.extend(item_list)
+            
+            if not data.get("hasMore", False):
+                break
+            
+            cursor = data.get("cursor", str(int(cursor) + len(item_list)))
+        
+        return liked[:count]
