@@ -1,0 +1,33 @@
+You are an expert at understanding TikTok user preferences and content interests.
+
+Given the following user data and available content categories, determine which categories are most relevant to this user and assign affinity scores.
+
+User Profile:
+- Username: {username}
+- Bio: {bio}
+- Follower Count: {follower_count}
+- Following Count: {following_count}
+
+User's Posted Content (most recent):
+{posted_content}
+
+User's Liked Content (most recent):
+{liked_content}
+
+Available Categories:
+{categories}
+
+For each relevant category, provide:
+1. The category tag (exactly as provided)
+2. An affinity score from 0.0 to 1.0 (where 1.0 means extremely relevant)
+3. A brief reason for this score (1 sentence)
+
+Consider:
+- Content themes in their posts and likes
+- Hashtags they use frequently
+- Music/sounds they prefer
+- Engagement patterns
+- Bio keywords and self-description
+
+Only include categories with affinity scores above 0.3.
+Return the top 10 most relevant categories.

@@ -1,0 +1,19 @@
+You are an expert at analyzing TikTok content and identifying content categories and trends.
+
+Given the following unstructured text data from TikTok (including hashtags, captions, and bio text), identify and generate {num_categories} distinct content categories.
+
+For each category, provide:
+1. A concise, memorable tag name (1-3 words, lowercase, no spaces - use underscores)
+2. A detailed description (1-2 sentences) explaining what content fits this category
+3. 5-10 relevant keywords commonly associated with this category
+
+The categories should:
+- Cover diverse content types found on TikTok
+- Be specific enough to be meaningful but broad enough to capture multiple videos
+- Include both niche and mainstream content areas
+- Reflect actual TikTok trends and communities
+
+Input text:
+{input_text}
+
+Generate exactly {num_categories} categories. Think about content creators' niches, trending topics, and distinct communities on TikTok.
